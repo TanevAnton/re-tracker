@@ -8,7 +8,13 @@
     "search_url": "https://www.olx.bg/ads/q-{slug}/",
     "market": "classifieds",
     "delivery": "Only listings with the OLX delivery badge enter benchmarks; other listings remain in review.",
-    "validation": "Live DOM parser verified 2026-09-07; automated runner access must be verified."
+    "validation": "2026-09-07 local robots.txt returns HTTP 403; collection stops before listings. Policy cannot be established; use approved import.",
+    "automation": "allowed",
+    "browser": true,
+    "visual": true,
+    "browser_access_verified": false,
+    "policy_checked_on": "2026-09-07",
+    "card_selector": "[data-cy=\"l-card\"], [data-testid=\"l-card\"]"
   },
   "desktop": {
     "enabled": true,
@@ -21,7 +27,14 @@
     "delivery": "Nationwide Bulgaria; courier price varies by order and destination.",
     "delivery_evidence": "https://laptop.bg/pages/delivery",
     "delivery_verified_on": "2026-09-07",
-    "validation": "Live search microdata parser verified 2026-09-07."
+    "validation": "HTTP search and ordinary Chrome revalidated locally 2026-09-07. Commercial content reuse requires review before publication.",
+    "automation": "allowed",
+    "browser": true,
+    "visual": true,
+    "browser_access_verified": true,
+    "policy_checked_on": "2026-09-07",
+    "card_selector": "article",
+    "terms_url": "https://laptop.bg/pages/terms-and-conditions"
   },
   "pazaruvaj": {
     "enabled": true,
@@ -32,10 +45,17 @@
     "search_url": "https://www.pazaruvaj.com/?st={query}",
     "market": "comparison",
     "delivery": "Retailer dependent. Aggregate prices never enter independent-offer benchmarks.",
-    "validation": "Security challenge in cloud browser on 2026-09-07. JSON-LD adapter is provisional; source fails visibly if structured offers are absent."
+    "validation": "2026-09-07: search is robots-disallowed; terms require written consent for content use. Automatic/browser/visual collection unavailable pending permission; no search workaround.",
+    "automation": "permission_required",
+    "browser": true,
+    "visual": true,
+    "browser_access_verified": false,
+    "policy_checked_on": "2026-09-07",
+    "card_selector": "[itemtype$=\"Product\"], .product-box",
+    "terms_url": "https://www.pazaruvaj.com/static/usloviq_za_polzvane.html"
   },
   "ardes": {
-    "enabled": false,
+    "enabled": true,
     "hosts": [
       "ardes.bg",
       "www.ardes.bg"
@@ -43,8 +63,16 @@
     "search_url": "https://ardes.bg/",
     "market": "retail",
     "delivery": "Nationwide Bulgaria, verified from official retailer page.",
-    "delivery_evidence": "https://ardes.bg/periferiya/slushalki/steelseries",
+    "delivery_evidence": "https://ardes.bg/polezna-informaciya/obshti-usloviya",
     "delivery_verified_on": "2026-09-07",
-    "validation": "Disabled: security verification prevents parser validation. Set exact product source_urls and verify before enabling."
+    "validation": "2026-09-07: one mapped Ryzen 5 7600 BOX URL validated over HTTP (222.99 EUR). Supplier-only stock and missing condition remain in review. No search adapter; unmapped models are not queried.",
+    "automation": "allowed",
+    "browser": true,
+    "visual": true,
+    "browser_access_verified": false,
+    "policy_checked_on": "2026-09-07",
+    "card_selector": "[itemtype$=\"Product\"], .product",
+    "terms_url": "https://ardes.bg/polezna-informaciya/obshti-usloviya",
+    "product_urls_only": true
   }
 }

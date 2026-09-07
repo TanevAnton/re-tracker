@@ -1,15 +1,33 @@
-"""Bounded public HTTP client with robots policy, host allowlist and circuit breaker."""
+"""Identifying, rate-limited public HTTP with fail-closed robots and typed failures."""
 import time
 import urllib.error
 import urllib.request
-import urllib.robotparser
 from urllib.parse import urlsplit
+from protego import Protego
 
-AGENT = 'ReTechPriceTracker/1.0 (+https://github.com/TanevAnton/re-tracker)'
+AGENT = 'ReTechPriceTracker/2.0 (+https://github.com/TanevAnton/re-tracker)'
+
+
+def category(code):
+    if code.startswith('robots_'): return 'robots'
+    if code in ('automation_prohibited', 'permission_required', 'policy_unverified'): return 'policy'
+    if code == 'login_required': return 'login'
+    if code == 'security_challenge': return 'challenge'
+    if code == 'access_denied': return 'access_restriction'
+    if code == 'javascript_required': return 'rendering'
+    if code.startswith('parser_'): return 'parser'
+    if code.startswith('http_'): return 'http'
+    if code.startswith(('browser_', 'visual_', 'assisted_')): return 'runtime'
+    return 'network'
 
 
 class SourceError(RuntimeError):
-    pass
+    def __init__(self, code, *, attempts=None, http_status=None):
+        super().__init__(code)
+        self.code = code
+        self.category = category(code)
+        self.attempts = attempts or []
+        self.http_status = http_status
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -22,21 +40,26 @@ class Client:
         self.hosts = set(hosts)
         self.delay = max(3.0, delay)
         self.timeout = timeout
-        self.robots = {}
-        self.last = {}
+        self.robots, self.last, self.cache = {}, {}, {}
         self.opener = urllib.request.build_opener(NoRedirect)
-        self.cache = {}
 
     def validate(self, url):
-        p = urlsplit(url)
-        if p.scheme != 'https' or p.hostname not in self.hosts or p.username or p.password or p.port not in (None, 443):
+        try:
+            p = urlsplit(url)
+            valid = p.scheme == 'https' and p.hostname in self.hosts and not p.username and not p.password and p.port in (None, 443)
+        except ValueError:
+            valid = False
+        if not valid:
             raise SourceError('url_not_allowlisted')
         return p
 
-    def request(self, url):
+    def throttle(self, url):
         p = self.validate(url)
         time.sleep(max(0, self.delay - (time.monotonic() - self.last.get(p.hostname, 0))))
         self.last[p.hostname] = time.monotonic()
+
+    def request(self, url):
+        self.throttle(url)
         req = urllib.request.Request(url, headers={'User-Agent': AGENT, 'Accept': 'text/html,text/plain', 'Accept-Language': 'bg,en;q=0.5'})
         try:
             with self.opener.open(req, timeout=self.timeout) as r:
@@ -47,34 +70,38 @@ class Client:
         except urllib.error.HTTPError:
             raise
         except (OSError, TimeoutError) as exc:
-            raise SourceError(type(exc).__name__) from exc
+            raise SourceError('network_unavailable') from exc
 
-    def get(self, url):
+    def check_robots(self, url):
         p = self.validate(url)
-        if url in self.cache:
-            return self.cache[url]
         if p.hostname not in self.robots:
-            robot_url = f'https://{p.netloc}/robots.txt'
-            robot = urllib.robotparser.RobotFileParser(robot_url)
             try:
-                body = self.request(robot_url)
+                body = self.request(f'https://{p.netloc}/robots.txt')
                 if '<html' in body.lower() or '<!doctype' in body.lower():
                     raise SourceError('robots_unavailable')
-                robot.parse(body.splitlines())
             except urllib.error.HTTPError as exc:
                 if exc.code == 404:
-                    robot.parse([])
+                    body = ''
                 else:
-                    raise SourceError(f'robots_http_{exc.code}') from exc
-            self.robots[p.hostname] = robot
+                    raise SourceError(f'robots_http_{exc.code}', http_status=exc.code) from exc
+            self.robots[p.hostname] = Protego.parse(body)
         robot = self.robots[p.hostname]
-        if not robot.can_fetch(AGENT, url):
+        # Protego supports wildcard/query and $ rules that urllib.robotparser misses.
+        if not robot.can_fetch(url, AGENT):
             raise SourceError('robots_disallowed')
-        self.delay = max(self.delay, robot.crawl_delay(AGENT) or 0)
+        self.delay = max(self.delay, float(robot.crawl_delay(AGENT) or 0))
+
+    def get(self, url):
+        self.check_robots(url)
+        if url in self.cache:
+            return self.cache[url]
         try:
             body = self.request(url)
         except urllib.error.HTTPError as exc:
-            # Do not retry a rejection, challenge, rate limit, or redirect automatically.
-            raise SourceError(f'http_{exc.code}') from exc
+            from .parsers import page_problem
+            body = exc.read(200_000).decode('utf8', errors='replace')
+            problem = page_problem(body)
+            if exc.code == 401: problem = 'login_required'
+            raise SourceError(problem or f'http_{exc.code}', http_status=exc.code) from exc
         self.cache[url] = body
         return body

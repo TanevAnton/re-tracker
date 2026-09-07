@@ -19,6 +19,13 @@ def money(value, currency=None):
     """Return (original amount, currency, EUR); reject unlabelled/invalid money."""
     s = str(value).replace('\xa0', ' ').replace('\u202f', ' ').strip()
     if not currency:
+        if re.search(r'-\s*\d', s):
+            raise ValueError('invalid_price')
+        for marker in (r'(?:€|EUR)', r'(?:лв\.?|BGN)'):
+            amounts = re.findall(r'([\d][\d .,]*)\s*'+marker, s, re.I)
+            normalized = {money(x, 'EUR' if 'EUR' in marker else 'BGN')[2] for x in amounts}
+            if len(normalized) > 1:
+                raise ValueError('ambiguous_price')
         # Prefer EUR when a source renders both currencies.
         match = re.search(r'([\d][\d .,]*)\s*(€|EUR)', s, re.I)
         if not match:
@@ -171,18 +178,46 @@ def json_products(root, base):
     return rows, recognized
 
 
+def page_problem(content):
+    try:
+        root = html.fromstring(content or '<html/>')
+    except (ValueError, TypeError):
+        return 'parser_invalid_html'
+    visible = ' '.join(root.xpath('//text()[not(ancestor::script) and not(ancestor::style)]')).lower()
+    if any(s in visible for s in ('verify you are human','performing security verification',
+            'проверка за сигурността на връзката','checking your browser','just a moment...',
+            'complete the captcha','потвърдете, че сте човек')):
+        return 'security_challenge'
+    if root.xpath('//input[@type="password"]') and not root.xpath('//article | //*[@data-cy="l-card"]'):
+        return 'login_required'
+    if any(s in visible for s in ('access denied','достъпът е отказан','you have been blocked')):
+        return 'access_denied'
+    if any(s in visible for s in ('please enable javascript','javascript is required','enable javascript to continue')):
+        return 'javascript_required'
+    return None
+
+
 def parse(source, content, base):
-    root = html.fromstring(content)
-    visible = ' '.join(root.xpath('//body//text()[not(ancestor::script) and not(ancestor::style)]')).lower()
-    if any(s in visible for s in ('verify you are human', 'performing security verification', 'проверка за сигурността на връзката', 'checking your browser', 'just a moment...')):
-        raise ValueError('security_challenge')
+    problem = page_problem(content)
+    if problem: raise ValueError(problem)
+    try:
+        root = html.fromstring(content)
+    except (ValueError, TypeError) as exc:
+        raise ValueError('parser_invalid_html') from exc
+    visible = ' '.join(root.xpath('//text()[not(ancestor::script) and not(ancestor::style)]')).lower()
     if source == 'olx':
         rows, count = olx(root, base)
     elif source == 'desktop':
         rows, count = desktop(root, base)
     else:
         rows, count = json_products(root, base)
-    # No parsed cards is a parser/source failure unless the page explicitly says zero results.
+    if source == 'ardes':
+        # Schema.org InStock on the live page conflicts with the visible supplier
+        # caveat. Require retailer confirmation rather than trusting that tag.
+        for row in rows:
+            row['merchant'] = 'ardes.bg'
+            if 'външен доставчик' in visible:
+                row['availability'] = 'supplier_confirmation'
     empty = bool(re.search(r'(открихме\s+0\s+обяви|0\s+резултата|няма намерени|не намерихме)', visible))
     if not rows and not empty:
         raise ValueError('parser_no_prices' if count else 'parser_no_cards')

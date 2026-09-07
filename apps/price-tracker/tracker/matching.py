@@ -1,5 +1,6 @@
 import re
 import unicodedata
+import math
 
 
 def norm(value):
@@ -47,8 +48,28 @@ def match(row, model):
     else:
         if not all(re.search(p, title, re.I) for p in model['required']):
             return 'rejected', 'different_specification'
+        if category == 'ram':
+            kits = re.findall(r'\b(\d+)\s*[xх×]\s*(\d+)gb\b', title)
+            expected = (str(model.get('kit_count', '')), str(model.get('module_gb', '')))
+            if not kits:
+                return 'review', 'ram_kit_unspecified'
+            if kits != [expected]:
+                return 'rejected', 'different_ram_kit'
+        if category in ('ssd', 'hdd') and model.get('capacity_gb'):
+            sizes = {int(n)*(1000 if unit == 'tb' else 1) for n,unit in re.findall(r'\b(\d+)(tb|gb)\b', title)}
+            if sizes != {model['capacity_gb']}:
+                return 'rejected', 'different_storage_capacity'
+        for variant in ('rgb', 'plus', 'max', 'heatsink'):
+            if re.search(r'\b'+variant+r'\b', title) and not re.search(r'\b'+variant+r'\b', norm(model['name'])):
+                return 'review', 'unspecified_model_variant'
     if any(re.search(p, title, re.I) for p in model.get('exclude', [])):
         return 'rejected', 'excluded_variant'
+    if model.get('mpn') and norm(row.get('sku','')) != norm(model['mpn']):
+        return 'review', 'exact_mpn_unconfirmed'
+    if row.get('price_eur') is None or not isinstance(row['price_eur'],(int,float)) or not math.isfinite(row['price_eur']):
+        return 'review', 'missing_or_invalid_price'
+    if row.get('extraction_review'):
+        return 'review', row['extraction_review']
     if row['price_eur'] < model.get('min_eur', 2) or row['price_eur'] > model.get('max_eur', 10000):
         return 'review', 'implausible_price'
     if row.get('condition') not in ('new', 'used'):

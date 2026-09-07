@@ -1,5 +1,5 @@
 /** Bound Google Apps Script. Paste into Extensions > Apps Script, run setupPriceTracker once. */
-const PRICE_REPO = 'https://raw.githubusercontent.com/TanevAnton/re-tracker/price-data/';
+const PRICE_REPO = 'https://raw.githubusercontent.com/TanevAnton/re-tracker/';
 
 function setupPriceTracker() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
@@ -19,14 +19,20 @@ function refreshPriceTracker() {
     const ss = SpreadsheetApp.openById(id);
     const runSheet = ss.getSheetByName('Tracker run') || ss.insertSheet('Tracker run');
     try {
-      const response = UrlFetchApp.fetch(PRICE_REPO + 'status.json', {muteHttpExceptions: true});
+      // Pin every download to one approved commit; never mix two publications.
+      const ref = UrlFetchApp.fetch('https://api.github.com/repos/TanevAnton/re-tracker/git/ref/heads/price-data', {muteHttpExceptions: true});
+      if (ref.getResponseCode() !== 200) throw new Error('Cannot resolve published data commit');
+      const commit = JSON.parse(ref.getContentText()).object.sha;
+      if (!/^[a-f0-9]{40}$/.test(commit)) throw new Error('Invalid data commit');
+      const base = PRICE_REPO + commit + '/';
+      const response = UrlFetchApp.fetch(base + 'status.json', {muteHttpExceptions: true});
       if (response.getResponseCode() !== 200) throw new Error('GitHub results unavailable: ' + response.getResponseCode());
       const run = JSON.parse(response.getContentText());
       const age = Date.now() - Date.parse(run.finished_at);
       if (run.mode !== 'live' || !Number.isFinite(age) || age > 36*3600000 || age < -300000) throw new Error('Results are stale or not a live run.');
       const files = [['Prices','summary.csv'],['Source status','source_status.csv']];
       const loaded = files.map(([name,path]) => {
-        const result = UrlFetchApp.fetch(PRICE_REPO + path, {muteHttpExceptions: true});
+        const result = UrlFetchApp.fetch(base + path, {muteHttpExceptions: true});
         if (result.getResponseCode() !== 200) throw new Error(path + ' is unavailable');
         const rows = Utilities.parseCsv(result.getContentText());
         if (!rows.length || rows[0][0] !== (name === 'Prices' ? 'model_id' : 'source')) throw new Error('Unexpected schema in '+path);

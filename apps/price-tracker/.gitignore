@@ -4,3 +4,12 @@ __pycache__/
 *.sqlite*
 output/
 secrets/
+.local/
+.env.*
+!.env.example
+browser-profiles/
+*.log
+*.png
+*.jpg
+*.jpeg
+*.webp

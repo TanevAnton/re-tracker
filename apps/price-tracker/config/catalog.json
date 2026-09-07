@@ -600,7 +600,10 @@
     "name": "Ryzen 5 7600",
     "query": "Ryzen 5 7600",
     "min_eur": 2,
-    "max_eur": 10000
+    "max_eur": 10000,
+    "source_urls": {
+      "ardes": "https://ardes.bg/product/amd-ryzen-5-7600-3-8ghz-100-100001015box-308851"
+    }
   },
   {
     "id": "ryzen-5-7600x",
@@ -832,7 +835,7 @@
   {
     "id": "kingston-fury-beast-32gb-ddr5-6000-cl30",
     "category": "ram",
-    "name": "Kingston Fury Beast 32GB DDR5 6000 CL30",
+    "name": "Kingston Fury Beast 32GB DDR5 6000 CL30 (2x16GB kit)",
     "query": "Kingston Fury Beast 32GB DDR5 6000 CL30",
     "min_eur": 2,
     "max_eur": 10000,
@@ -845,12 +848,14 @@
       "6000",
       "cl\\s*30"
     ],
-    "exclude": []
+    "exclude": [],
+    "kit_count": 2,
+    "module_gb": 16
   },
   {
     "id": "corsair-vengeance-32gb-ddr5-6000-cl30",
     "category": "ram",
-    "name": "Corsair Vengeance 32GB DDR5 6000 CL30",
+    "name": "Corsair Vengeance 32GB DDR5 6000 CL30 (2x16GB kit)",
     "query": "Corsair Vengeance 32GB DDR5 6000 CL30",
     "min_eur": 2,
     "max_eur": 10000,
@@ -862,12 +867,14 @@
       "6000",
       "cl\\s*30"
     ],
-    "exclude": []
+    "exclude": [],
+    "kit_count": 2,
+    "module_gb": 16
   },
   {
     "id": "kingston-fury-beast-16gb-ddr4-3200-cl16",
     "category": "ram",
-    "name": "Kingston Fury Beast 16GB DDR4 3200 CL16",
+    "name": "Kingston Fury Beast 16GB DDR4 3200 CL16 (2x8GB kit)",
     "query": "Kingston Fury Beast 16GB DDR4 3200 CL16",
     "min_eur": 2,
     "max_eur": 10000,
@@ -880,7 +887,9 @@
       "3200",
       "cl\\s*16"
     ],
-    "exclude": []
+    "exclude": [],
+    "kit_count": 2,
+    "module_gb": 8
   },
   {
     "id": "samsung-990-pro-1tb",
@@ -894,7 +903,8 @@
       "990\\s*pro",
       "\\b1tb\\b"
     ],
-    "exclude": []
+    "exclude": [],
+    "capacity_gb": 1000
   },
   {
     "id": "samsung-990-pro-2tb",
@@ -908,7 +918,8 @@
       "990\\s*pro",
       "\\b2tb\\b"
     ],
-    "exclude": []
+    "exclude": [],
+    "capacity_gb": 2000
   },
   {
     "id": "wd-black-sn850x-2tb",
@@ -922,7 +933,8 @@
       "sn850x",
       "\\b2tb\\b"
     ],
-    "exclude": []
+    "exclude": [],
+    "capacity_gb": 2000
   },
   {
     "id": "kingston-nv3-1tb",
@@ -936,7 +948,8 @@
       "\\bnv3\\b",
       "\\b1tb\\b"
     ],
-    "exclude": []
+    "exclude": [],
+    "capacity_gb": 1000
   },
   {
     "id": "team-mp33-pro-2tb",
@@ -950,7 +963,8 @@
       "mp33\\s*pro",
       "\\b2tb\\b"
     ],
-    "exclude": []
+    "exclude": [],
+    "capacity_gb": 2000
   },
   {
     "id": "seagate-barracuda-st2000dm008",

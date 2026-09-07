@@ -1,23 +1,25 @@
 # Re-Tech component price tracker
 
-Daily PC-component price observations from websites serving Bulgaria, for future configurator pricing and resale estimates. Python 3.12, GitHub Actions, SQLite history, and CSV/JSON exports.
+Local daily PC-component price observations from websites serving Bulgaria. Source code lives in this dedicated repository; no Shopify, configurator or customer price writes.
 
-- [Tracker documentation and setup](apps/price-tracker/README.md)
-- [Latest reports and data](https://github.com/TanevAnton/re-tracker/tree/price-data)
-- [Daily workflow and run status](https://github.com/TanevAnton/re-tracker/actions/workflows/price-tracker.yml)
-- [Editable component catalog](apps/price-tracker/config/catalog.json)
-- [Google Sheets import script](apps/price-tracker/sheets/Code.gs)
+- [Setup, commands, source policy and scheduling](apps/price-tracker/README.md)
+- [Validation and handoff, 2026-09-07](apps/price-tracker/VALIDATION.md)
+- [Catalog: 126 starter models across 19 categories](apps/price-tracker/config/catalog.json)
+- [Published reports](https://github.com/TanevAnton/re-tracker/tree/price-data) — **only updated by an explicitly approved local publication**
+- [CI tests](https://github.com/TanevAnton/re-tracker/actions/workflows/price-tracker.yml)
 
-The workflow collects daily at **04:23 UTC** and stores results on the `price-data` branch. The starter catalog contains **126 models across 19 categories**; add exact models as needed. Retail and used prices remain separate, and OLX observations represent asking prices.
+The local collector tries identifying HTTP, then a policy-permitted isolated Chrome session, then rendered text and local Apple Vision screenshot OCR. Uncertain extraction goes to review. Robots, login, challenges and explicit prohibitions stop collection; there are no CAPTCHA solvers, proxy rotations or browser-profile reuse.
 
-**Source access:** the last collection before this repository move returned HTTP 403 restrictions from OLX, Desktop.bg, and Pazaruvaj, with zero collected observations. Ardes is disabled. Check the latest report and source status before using any prices. Moving the repository does not resolve those source restrictions.
-
-To run the existing tests:
+On the configured Mac:
 
 ```bash
-cd apps/price-tracker
-pip install -r requirements.txt
-python -m unittest discover -s tests -v
+cd ~/Developer/re-tracker/apps/price-tracker
+./trackerctl test
+./trackerctl collect --model ryzen-5-7600 --max-pages 1
+./trackerctl report
+./trackerctl schedule status
 ```
 
-See the tracker documentation for collection commands, matching rules, source limitations, and Google Sheets setup.
+Daily launchd collection is installed for **07:23 local time**. GitHub runs CI only. The original project folder contains a link to the repository; the checkout moved out of Documents because macOS denies launchd access there.
+
+Live validation found **two unique observations** in the small four-source CPU check: Desktop.bg HTTP (one accepted), Ardes HTTP (one review). Desktop browser DOM also worked. OLX could not expose robots rules; Pazaruvaj requires permission and prohibits the configured search through robots. See the validation report for the distinction between live evidence and synthetic browser/OCR tests.
