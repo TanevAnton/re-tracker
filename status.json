@@ -1,6 +1,6 @@
 {
-  "run_id": "cd40f500-cec9-4fcb-9cc0-3ac38ec43cb3",
-  "started_at": "2026-09-07T09:18:35.458014+00:00",
+  "run_id": "1b8f5f5a-c543-4517-a44c-52b7875751e0",
+  "started_at": "2026-09-07T14:08:37.995048+00:00",
   "mode": "live",
   "jobs": [
     {
@@ -3406,7 +3406,7 @@
       "truncated": false
     }
   ],
-  "finished_at": "2026-09-07T09:18:38.902671+00:00",
+  "finished_at": "2026-09-07T14:08:41.411730+00:00",
   "successful_jobs": 0,
   "failed_jobs": 378,
   "collected_rows": 0,

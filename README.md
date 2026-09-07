@@ -1,6 +1,6 @@
 # Component price tracker
 
-Run: 2026-09-07T09:18:35.458014+00:00 | Mode: live | Health: **failed**
+Run: 2026-09-07T14:08:37.995048+00:00 | Mode: live | Health: **failed**
 
 Prices in EUR. Used prices are asking prices, not completed sales. Shipping is excluded unless known.
 
