@@ -1,7 +1,8 @@
 # Re-Tech Telegram reports
 
-Status: sender and connection-test workflow implemented. Credentials, group pairing,
-a live delivery test, and the ChatGPT report-producer connection are still required.
+Status: sender, private manual-send workflow, connection test, and read-only
+configuration check implemented. Live delivery needs the configured secrets; the
+ChatGPT report-producer connection is still separate and not activated here.
 There is no new daily schedule and no change to Shopify pricing or the Mac collector.
 
 ## Add the bot
@@ -42,6 +43,41 @@ Then Actions → Telegram connection test → Run workflow, using main.
 This sends a harmless connection-test message. The workflow cannot change prices.
 Do not enter private report contents into public repository files, issues or workflow
 inputs. This repository is public. The bot credentials belong only in secrets.
+
+## Send a report manually through GitHub (no Terminal)
+
+1. Open the report Markdown file from ChatGPT in a text editor and copy all its text.
+2. In repository Settings → Secrets and variables → Actions → New repository secret,
+   create `TELEGRAM_REPORT_TEXT` and paste that report text as its value. Do not paste
+   the file path or its ChatGPT download link. GitHub secrets support up to 48 KB;
+   the 2026-09-08 report is about 9 KB. Use the local file sender for larger reports.
+3. Ensure `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are also repository secrets.
+4. Open https://github.com/TanevAnton/re-tracker/actions/workflows/telegram-send.yml
+   → Run workflow → select `main` → Run workflow.
+5. Open the run. `Report delivery confirmed.` means Telegram returned a message ID.
+   The complete report appears in the group as `re-tech-report.md`.
+
+Replace `TELEGRAM_REPORT_TEXT` before sending a newer report. The workflow sends
+one document per click; rerunning it sends another copy. The report is read from
+an encrypted Actions secret directly into memory, never committed, interpolated
+into shell commands, printed by the sender, or saved as an Actions artifact.
+The connection-test button still sends only a fixed test message.
+
+## Troubleshooting a failed test
+
+The `Telegram configuration check` workflow runs after sender-code updates on main
+and can also be started manually. It calls getMe and getChat without posting.
+It checks the expected bot identity and group access. A passing check does not
+prove posting permissions or that an optional forum topic exists; the connection
+test verifies those by sending a message. The full report also needs document
+posting permission. Public logs contain fixed diagnostic messages, not raw API
+responses, tokens, group IDs, or report content.
+
+The sender accepts surrounding whitespace and copied `NAME=value` lines for token,
+chat ID and optional topic settings. A missing-secret error means the setting must
+be created under **Secrets**, not **Variables**. For token, chat-access or posting
+errors, follow the precise message in the new run. Start a **new run from main**
+after updating code; rerunning an older run uses that older version.
 
 ## Send the current report from your Mac
 
@@ -86,5 +122,6 @@ network-error handling without automatic duplicate sends. Actual Telegram delive
 requires the configured secrets and an explicit test run.
 
 References:
+- https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow
 - https://core.telegram.org/bots/api#senddocument
 - https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets
